@@ -248,3 +248,5 @@ dmidecode
 db2 import from /dev/null of del replace into itmuser.KV1_VIRTUAL_MACHINES
 
 curl -sS -k -u "root:object00" -X GET https://172.16.22.6:8422/ibm/director/rest/VMControl/workloads/475631
+
+curl -sS -k -u "root:object00" -X GET https://172.16.22.6:8422/ibm/director/rest/VMControl/workloads/475631
