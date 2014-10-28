@@ -1,0 +1,758 @@
+iptables -t nat -A POSTROUTING -j MASQUERADE
+
+set tabstop=4
+set softtabstop=4
+set shiftwidth=4
+vim: tabstop=4 shiftwidth=4 softtabstop=4
+
+gemini.cn.ibm.com pwd: g1m1n1cd
+
+ipmitool -H 172.29.101.62 -U USERID -P PASSW0RD sdr
+
+ipmitool -H 172.29.101.62 -U USERID -P PASSW0RD power status
+
+[root@gemini-mn01 asu]# ./asu64 show PXE.NicPortMacAddress.1 --kcs --host 172.29.101.62 --USER USERID --password PASSW0RD
+IBM Advanced Settings Utility version 9.41.81K
+Licensed Materials - Property of IBM
+(C) Copyright IBM Corp. 2007-2013 All Rights Reserved
+Connected to IMM at IP address 172.29.101.38
+PXE.NicPortMacAddress.1=E4-1F-13-EF-0D-62
+[root@gemini-mn01 asu]#
+
+[root@gemini-mn01 asu]# ipmitool -H 172.29.101.62 -U USERID -P PASSW0RD power off
+Chassis Power Control: Down/Off
+[root@gemini-mn01 asu]# ipmitool -H 172.29.101.62 -U USERID -P PASSW0RD power on
+Chassis Power Control: Up/On
+[root@gemini-mn01 asu]# 
+
+[root@gemini-mn01 asu]# ./asu64 immapp poweroffos --host 172.29.101.62 --USER USERID --password PASSW0RD                            
+IBM Advanced Settings Utility version 9.41.81K
+Licensed Materials - Property of IBM
+(C) Copyright IBM Corp. 2007-2013 All Rights Reserved
+Connected to IMM at IP address 172.29.101.62
+Server Powered off!
+[root@gemini-mn01 asu]# ./asu64 immapp poweronos --host 172.29.101.62 --USER USERID --password PASSW0RD  
+IBM Advanced Settings Utility version 9.41.81K
+Licensed Materials - Property of IBM
+(C) Copyright IBM Corp. 2007-2013 All Rights Reserved
+Connected to IMM at IP address 172.29.101.62
+Server Powered On!
+[root@gemini-mn01 asu]# 
+
+[root@gemini-mn01 asu]# ./asu64 show all --kcs --host 172.29.101.62 --USER USERID --password PASSW0RD | grep "PXE.NicPortMacAddress"
+PXE.NicPortMacAddress.1=34-40-B5-9F-7E-DC
+PXE.NicPortMacAddress.2=34-40-B5-9F-7E-DE
+[root@gemini-mn01 asu]# ./asu64 show all --kcs --host 172.29.101.62 --USER USERID --password PASSW0RD | grep "iSCSI.MacAddress"
+iSCSI.MacAddress.1=34-40-B5-9F-7E-DC
+iSCSI.MacAddress.2=34-40-B5-9F-7E-DE
+iSCSI.MacAddress.3=00-00-C9-F6-77-28
+iSCSI.MacAddress.4=00-00-C9-F6-77-2C
+[root@gemini-mn01 asu]#
+[root@gemini-mn01 asu]# ./asu64 set IMM.PXE_NextBootEnabled Enabled --host 172.29.101.62 --user USERID --password PASSW0RD
+IBM Advanced Settings Utility version 9.41.81K
+Licensed Materials - Property of IBM
+(C) Copyright IBM Corp. 2007-2013 All Rights Reserved
+Connected to IMM at IP address 172.29.101.62
+IMM.PXE_NextBootEnabled=Enabled
+Waiting for command completion status.
+Command completed successfully.
+[root@gemini-mn01 asu]# ./asu64 set IMM.PXE_NextBootEnabled Disabled --host 172.29.101.62 --user USERID --password PASSW0RD       
+IBM Advanced Settings Utility version 9.41.81K
+Licensed Materials - Property of IBM
+(C) Copyright IBM Corp. 2007-2013 All Rights Reserved
+Connected to IMM at IP address 172.29.101.62
+IMM.PXE_NextBootEnabled=Disabled
+Waiting for command completion status.
+Command completed successfully.
+[root@gemini-mn01 asu]#
+
+[root@gemini-mn01 ~]# /home/mabo/asu/asu64 set BootOrder.BootOrder "PXE Network=CD/DVD Rom=Hard Disk 0=Legacy Only" --host 172.29.27.101 --user USERID --password PASSW0RD
+IBM Advanced Settings Utility version 9.41.81K
+Licensed Materials - Property of IBM
+(C) Copyright IBM Corp. 2007-2013 All Rights Reserved
+Connected to IMM at IP address 172.29.27.101
+BootOrder.BootOrder=PXE Network=CD/DVD Rom=Hard Disk 0=Legacy Only
+Waiting for command completion status.
+Command completed successfully.
+[root@gemini-mn01 ~]# 
+
+#!/bin/bash
+
+MACHINES=()
+
+
+
+MACHINE_MACS=()
+#MACHINE_POWERIDS=()
+MACHINE_POWERADDRESS=()
+MACHINE_POWERUSER=()
+MACHINE_POWERPASS=()
+MACHINE_POWERTYPES=()
+
+for i in `cat gemini-imm.lst` ; do 
+	mac=`/home/mabo/asu/asu64 show PXE.NicPortMacAddress.1 --host $i --USER USERID --password PASSW0RD | grep PXE.NicPortMacAddress.1 | cut -d'=' -f'2'`
+	name=`/home/mabo/asu/asu64 show IMM.HostName1 --host $i --USER USERID --password PASSW0RD | grep IMM.HostName1 | cut -d'=' -f'2'`
+	
+	#if [[-z  "${mac}"] || [-z "${name}"]] ; then
+	if [[ (${#mac} -eq 0) || (${#name} -eq 0) ]] ; then
+		echo "ASU query failed for $i !!"
+	else
+		MACHINES+=$name
+		MACHINE_MACS+=${mac//-/:}
+		MACHINE_POWERADDRESS+=$i
+		MACHINE_POWERUSER+=USERID
+		MACHINE_POWERPASS+=PASSW0RD
+		MACHINE_POWERTYPES+=ipmitool
+	fi
+done
+
+echo $MACHINES
+echo $MACHINE_MACS
+echo $MACHINE_POWERADDRESS
+echo $MACHINE_POWERUSER
+echo $MACHINE_POWERPASS
+echo $MACHINE_POWERTYPES
+
+
+/home/mabo/asu/asu64 show PXE.NicPortMacAddress.1 --host $i --USER USERID --password PASSW0RD
+
+/home/mabo/asu/asu64 show R27-IDP-17 --host $i --USER USERID --password PASSW0RD
+
+
+git log
+git branch
+git checkout -b p1
+git pull origin
+cat .git/conf
+git pull git://gitorious.rch.stglabs.ibm.com/chef-toolkit/gemini.git
+git branch
+git checkout master
+git merge p1
+git log
+  
+  
+http://bejgsa.ibm.com/home/m/a/mabo/public/images/R24-network.png
+http://bejgsa.ibm.com/home/m/a/mabo/public/images/R26-network.png
+http://bejgsa.ibm.com/home/m/a/mabo/public/images/R27-28-network.png
+
+export http_proxy=http://9.115.78.100:8085/
+export https_proxy=http://9.115.78.100:8085/
+
+export http_proxy=http://172.16.27.100:8085/
+export https_proxy=http://172.16.27.100:8085/
+
+http://dl.fedoraproject.org/pub/epel/6/x86_64/
+
+
+git clone https://review.gemini.cdl.ibm.com/chef-toolkit/gemini
+
+cd gemini
+
+git remote add gerrit https://mabo:TsdL59SRR+YV@review.gemini.cdl.ibm.com/chef-toolkit/gemini
+
+export GIT_SSL_NO_VERIFY=true
+
+git config http.sslVerify false
+
+git config --global user.name "MaBo"
+git config --global user.email "mabo@cn.ibm.com"
+
+git reset HEAD^ 
+
+curl -k https://review.gemini.cdl.ibm.com/tools/hooks/commit-msg -o .git/hooks/commit-msg
+
+chmod 0755 .git/hooks/commit-msg 
+
+statuscode      A       9.181.26.252
+etherpad        A       9.181.26.252
+review          A       9.181.26.252
+
+cobbler import --arch=x86_64 --breed=redhat --os-version=rhel7 --path=/mnt/iso --name RHEL7-x86_64
+
+cobbler system add --name=R27-IDP-1 --profile=RHEL65-x86_64 --interface=eth0 --mac=E4:1F:13:EF:36:F6 --ip-address=172.16.27.101
+cobbler system edit --name=R27-IDP-1 --power-address=imm --power-address=172.29.27.101 --power-user=USERID --power-pass=PASSW0RD
+cobbler system edit --name=R27-IDP-1 --server=172.16.27.119
+cobbler profile edit --name=RHEL65-x86_64 --kickstar=/var/lib/cobbler/kickstarts/sample.ks
+cobbler system edit --name=R27-IDP-1 --netmask=255.255.255.0 --gateway=172.16.27.1 --hostname=R27-IDP-1
+cobbler system edit --name=R27-IDP-8 --netboot-enabled=1
+
+cobbler system reboot --name=R27-IDP-1
+cobbler system poweroff --name=R27-IDP-1
+cobbler system poweron --name=R27-IDP-1
+
+
+cobbler system add --name=R27-IDP-5 --profile=RHEL65-x86_64 --interface=eth0 --mac=E4:1F:13:EF:13:0E --ip-address=172.16.27.5 --netmask=255.255.255.0 --gateway=172.16.27.1 --hostname=R27-IDP-5 --power-type=imm --power-address=172.29.27.5 --power-user=USERID --power-pass=PASSW0RD --server=172.16.27.119
+
+
+cobbler system add --name=R27-IDP-8 --profile=RHEL65-x86_64 --interface=eth0 --mac=E4:1F:13:EF:35:9A --ip-address=172.16.27.8 --netmask=255.255.255.0 --gateway=172.16.27.1 --hostname=R27-IDP-8 --power-type=imm --power-address=172.29.27.8 --power-user=USERID --power-pass=PASSW0RD --server=172.16.27.119 --kickstar=/var/lib/cobbler/kickstarts/sample.ks
+
+PXE.NicPortMacAddress.1=E4-1F-13-EF-35-9A
+PXE.NicPortMacAddress.2=E4-1F-13-EF-35-9B
+PXE.NicPortPxeMode.1=UEFI and Legacy Support
+PXE.NicPortPxeMode.2=Disabled
+PXE.NicPortPxeProtocol.1=IPv4
+PXE.NicPortPxeProtocol.2=IPv4
+BootOrder.BootOrder=PXE Network=Legacy Only=Hard Disk 0
+BootOrder.WolBootOrder=PXE Network=Hard Disk 0=CD/DVD Rom
+
+
+PXE.NicPortPxeMode.1=UEFI and Legacy Support
+PXE.NicPortPxeMode.1=UEFI Support
+PXE.NicPortPxeMode.1=Legacy Support
+
+/iaas/gemini/asu/asu64 set PXE.NicPortPxeMode.1 "Legacy Support" --host 172.29.27.8 --user USERID --password PASSW0RD
+
+/iaas/gemini/asu/asu64 set PXE.NicPortPxeMode.1 "UEFI Support" --host 172.29.27.8 --user USERID --password PASSW0RD
+/iaas/gemini/asu/asu64 set PXE.NicPortPxeMode.2 Disabled --host 172.29.27.8 --user USERID --password PASSW0RD
+/iaas/gemini/asu/asu64 set BootOrder.BootOrder "PXE Network=CD/DVD Rom" --host 172.29.27.8 --user USERID --password PASSW0RD
+
+/iaas/gemini/asu/asu64 set PXE.NicPortPxeMode.1 "Legacy Support" --host 172.29.27.8 --user USERID --password PASSW0RD  
+/iaas/gemini/asu/asu64 set BootOrder.BootOrder "PXE Network=CD/DVD Rom=Legacy Only=Hard Disk 0" --host 172.29.27.8 --user USERID --password PASSW0RD
+
+knife cookbook upload $i -o .
+
+chef-client -o role[os-ops-database],recipe[openstack-ops-database::openstack-db] -E gemini
+chef-client -o role[os-ops-messaging] -E gemini
+chef-client -o role[os-ops-caching] -E gemini
+chef-client -o role[os-identity-sco] -E gemini
+chef-client -o recipe[sysctl],role[os-image] -E gemini 
+
+chef-client -o recipe[sysctl],role[os-block-storage] -E gemini
+
+chef-client -o recipe[sysctl],role[os-network-dhcp-agent],role[os-network-l3-agent],role[os-network-linuxbridge],role[os-network-metadata-agent],role[os-network-server] -E gemini
+
+chef-client -o role[os-compute-api-ibm],role[os-compute-api-metadata],role[os-compute-api-os-compute],role[os-compute-cert],role[os-compute-conductor],role[os-compute-scheduler],role[os-compute-vncproxy] -E gemini
+
+chef-client -o recipe[sysctl],role[os-network-linuxbridge],role[os-compute-worker] -E gemini
+
+chef-client -o role[os-dashboard] -E gemini
+
+chef-client -o role[iaas_gateway],role[scui],role[bpm] --override-runlist -E gemini
+
+chef-client -o role[scui] -E gemini
+
+chef-client -o recipe[ganglia] -E gemini
+
+glance image-create --name rhel65-x64-cldinit --disk-format qcow2 --container-format bare --is-public True < ./rhel65_cldinit.img
+
+
+neutron net-create netvxlan-1 --tenant-id d6608cba93f441158ef3db6bf4b8264c --provider:network_type vxlan --provider:segmentation_id 2025
+neutron subnet-create --gateway 10.10.20.1 netvxlan-1 10.10.20.0/24 --allocation-pool start=10.10.20.3,end=10.10.20.254 --name subnet-vxlan-1 
+
+nova boot --image rhel65-x64-cldinit gtest-1 --flavor 3
+
+nova boot --image rhel65-x64-cldinit m8 --flavor 3 --hint force_hosts=R27-IDP-13
+nova boot --image rhel65-x64-cldinit m1 --flavor 3 --nic net-id=4d22099a-e9cf-46c5-9e59-ddf07a1dac1e --availability-zone nova:R27-IDP-10 --user-data /tmp/user-data
+
+ssh -L 9.115.78.202:50000:172.16.27.14:5900 localhost
+
+knife solo prepare root@172.17.36.35 -i ~/.ssh/vm.key
+
+watch -d -n 1 "netstat -ap|grep gpm"  
+
+git submodule init
+git submodule update
+knife solo cook root@172.17.36.35 -i ~/.ssh/vm.key nodes/fvt-dns.json 
+knife solo cook root@172.17.32.13 -i ~/.ssh/rtp_cobbler nodes/172.17.32.13.json 
+
+./generate-deployment-configs -m /tmp/machines/ -d /tmp/config/172.17.34.def -l /tmp/lock/
+./generate-deployment-configs -m ~/temp/machines/ -d ~/temp/config/172.17.34.def -l ~/temp/lock/
+
+knife vsphere vm list -c ~/.chef/knife-rtp.rb
+
+./boot_esxi_vms -C /home/mabo/temp/machines/scobvt-mabo-test.conf -k /home/mabo/.chef/knife-rtp.rb
+
+tcpdump -i vxlan-1000 ether src fa:16:3e:40:e8:55
+
+/etc/init.d/neutron-server restart
+/etc/init.d/neutron-linuxbridge-agent restart
+/etc/init.d/neutron-metadata-agent restart
+/etc/init.d/neutron-dhcp-agent restart
+/etc/init.d/neutron-l3-agent restart
+
+neutron router-create router-9x
+neutron net-create private 
+neutron net-create private --tenant-id d6608cba93f441158ef3db6bf4b8264c --provider:network_type vxlan --provider:segmentation_id 1000
+neutron subnet-create private 10.10.20.0/24 --name private_subnet
+neutron router-interface-add router-9x private_subnet
+neutron net-create public --router:external=True --provider:network_type flat --provider:physical_network physnet1 
+neutron subnet-create public 9.111.102.0/24 --name public_subnet --disable-dhcp --allocation-pool start=9.111.102.20,end=9.111.102.100 --gateway=9.111.102.1
+neutron router-gateway-set router-9x public
+neutron floatingip-create public
+
+neutron net-create vmware-net --provider:network_type flat --provider:physical_network physnet1
+neutron subnet-create vmware-net 10.10.100.0/24 --name vmware_subnet1
+
+wget http://9.181.26.252/scp22imagePre/vmware/debian-2.6.32-i686.vmdk
+glance image-create --name debian-2.6.32-i686 --is-public=True --container-format=bare --disk-format=vmdk --file /root/debian-2.6.32-i686.vmdk
+
+
+
+neutron net-create public --router:external=True --provider:network_type flat --provider:physical_network physnet1 
+neutron subnet-create public 9.111.102.0/24 --name public_subnet --disable-dhcp --allocation-pool start=9.111.102.50,end=9.111.102.60 --gateway=9.111.102.1
+
+neutron router-create router-9x
+neutron net-create kvm-net --provider:network_type vxlan --provider:segmentation_id 10000
+neutron subnet-create kvm-net 10.10.200.0/24 --dns_nameservers list=true 9.115.78.212 --name kvm_subnet1
+neutron router-interface-add router-9x kvm_subnet1
+neutron router-gateway-set router-9x public
+wget http://9.181.26.252/data/cirros.img
+glance image-create --name cirros --is-public=True --container-format=bare --disk-format=qcow2 --file /root/cirros.img
+
+wget http://9.115.78.101/gemini/iproute-2.6.32-130.el6ost.netns.2.x86_64.rpm
+
+
+ip route add 9.0.0.0/8 via 172.16.27.200 dev eth0
+
+neutron subnet-update fixed --dns_nameservers list=false 8.8.8.7 8.8.8.8
+neutron subnet-update fixed --dns_nameservers action=clear
+
+sed /etc/nova/nova.conf qemu/kvm
+nova-compute restart
+
+        wget -e dotbytes=100M --tries=100 ${BASE_URL}/$BUILDID/${PACKAGE_FILE_NAME} -O "${DOWNLOAD_ROOT}/${PACKAGE_FILE_NAME}" || return 3
+        log "Done downloading SCO install"
+        log "Started extracting SCO installer"
+        test -d "${SCP_INSTALL_ROOT}" || mkdir -p "${SCP_INSTALL_ROOT}"
+        tar -xvf ${DOWNLOAD_ROOT}/${PACKAGE_FILE_NAME} -C "${SCP_INSTALL_ROOT}" || return 3
+        log "Finished extracting SCO installer"
+
+openstack-config --set "/etc/nova/nova.conf" "DEFAULT" "libvirt_type" "kvm"
+service openstack-nova-compute restart
+
+source /root/keystonerc 
+glance image-create --name overcloud-img --container-format bare --disk-format qcow2 --file /root/sco/rhel65_cldinit_dev.img
+ds job-create -f /etc/heat/templates/allinone_heat.template gemini-allinone
+
+ds job-create -f /etc/heat/templates/allinone_heat.template gemini-allinone
+ds job-list
+ds job-execute f9916e94-ff08-4597-8df4-7237126535f4
+
+heat delete gemini-allinone
+
+
+[root@R24-X5-11 ~]# neutron agent-list
+which: no gedit in (/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin)
+which: no kate in (/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin)
++--------------------------------------+--------------------+----------------+-------+----------------+
+| id                                   | agent_type         | host           | alive | admin_state_up |
++--------------------------------------+--------------------+----------------+-------+----------------+
+| 96b3d74b-f500-4485-a0e2-b4342f859e53 | DHCP agent         | gemini-neutron | :-)   | True           |
+| 92374e31-2089-4c2c-b794-aa8712c66805 | Metadata agent     | gemini-neutron | :-)   | True           |
+| 1ed0ed2f-5e1a-48c4-829e-b57a5244d8e4 | Linux bridge agent | gemini-neutron | :-)   | True           |
+| 204ac3fd-f086-489e-be49-71bd0c75e11f | Linux bridge agent | R27-IDP-14     | :-)   | True           |
+| fdbf7be7-94bd-4b83-bd06-a427e39b0d37 | Linux bridge agent | R27-IDP-13     | :-)   | True           |
+| 463bf75f-a82b-46e6-893f-0d906d22ce7a | L3 agent           | gemini-neutron | :-)   | True           |
+| 34cfdeb8-584d-49a6-a088-964329c2c3d3 | Linux bridge agent | R24-X5-11      | :-)   | True           |
+| a27b9579-ebd3-4224-92a7-f22e391d692f | Metadata agent     | R24-X5-11      | :-)   | True           |
++--------------------------------------+--------------------+----------------+-------+----------------+
+
+proj=neutron
+plugin=dhcp-agent
+prog=$proj-$plugin
+exec="/usr/bin/$prog"
+config="/etc/$proj/dhcp_agent.ini"
+pidfile="/var/run/$proj/$prog.pid"
+logfile="/var/log/$proj/$plugin.log"
+
+
+/etc/init.d/neutron-dhcp-agent --config-file /etc/neutron/neutron.conf --config-file "/etc/neutron/dhcp_agent.ini"
+
+cd /root/sco/IBM_Cloud_Orchestrator-2.4.0.0-D20140224-175825/data/openstack/chef-repo/cookbooks
+for i in `ls -tl|grep ^drw|awk '{print $9}'`; do knife cookbook -y delete $i; done
+knife cookbook upload -a -o ./
+
+for i in `knife role list|grep -v ganglia`; do knife role delete -y $i; done
+for i in `ls -l|grep ^-rw|awk '{print $9}'`; do echo $i|cut -d'.' -f1|xargs knife role delete -y; done
+for i in `ls -l|grep ^-rw|awk '{print $9}'`; do knife role from file $i; done
+
+
+
+[ldap_pre_auth]
+# Base Config
+url = ldap://bluegroups.ibm.com:389
+
+# User Schema
+user_tree_dn = "ou=bluepages,o=ibm.com"
+user_attribute_name = "mail"
+
+[auto_population]
+default_tenant_id = ef52843d573c491faba0a05100953517
+default_role_id = 9fe2ff9ee4384b1894a90878d3e92bab
+
+
+ldapsearch -x -LLL -H ldap:/// -b dc=openstack,dc=org dn
+ldapsearch -x -LLL -h bluepages.ibm.com -b "o=ibm.com"
+ldapsearch -x -LLL -h bluepages.ibm.com -b ou=bluepages,o=ibm.com mail=mabo@cn.ibm.com
+ldapsearch -x -LLL -h bluegroups.ibm.com -b ou=memberList,ou=ibmgroups,o=ibm.com cn=gemini-iwd-users
+
+ethtool -S name 
+//returns the number as in 'ip link'
+
+ip link add vpn-host type veth peer name vpn-tenant
+ip link set vpn-tenant netns qdhcp-4d22099a-e9cf-46c5-9e59-ddf07a1dac1e
+ip addr add 10.10.20.229/24 dev vpn-host
+ip link set vpn-host up
+ip netns exec qdhcp-4d22099a-e9cf-46c5-9e59-ddf07a1dac1e ip addr add 10.10.20.230/24 dev vpn-tenant
+ip netns exec qdhcp-4d22099a-e9cf-46c5-9e59-ddf07a1dac1e ip link set vpn-tenant up
+
+sar
+sipcalc
+pktcap-uw
+
+ip link add vxlan-1000 type vxlan id 1000 group 239.0.0.2 dev eth1
+
+
+update endpoint set url='http://9.115.78.100/keystone/v3' where id='760d160153af4db6bb6f3ef5cb1b6d7e'
+update endpoint set url='http://9.115.78.100/glance-api/v2' where id='627708c50553467bb788a5949d0c2422'
+update endpoint set url='http://9.115.78.100/cinder-api/v1/%(tenant_id)s' where id='f179c8457b614dde9aae1be60c3f5a70'
+update endpoint set url='http://9.115.78.100/neutron-api' where id='d28af9c0d9f84aaa817d18080ca7e77d'
+update endpoint set url='http://9.115.78.100/nova-api/v2/%(tenant_id)s' where id='38d37ee7c8314b98bc76b878e74c47ae'
+
+
+update endpoint set url='http://172.16.27.204:5000/v3' where id='760d160153af4db6bb6f3ef5cb1b6d7e'
+update endpoint set url='http://172.16.27.16:9292/v2' where id='627708c50553467bb788a5949d0c2422'
+update endpoint set url='http://172.16.27.15:8776/v1/%(tenant_id)s' where id='f179c8457b614dde9aae1be60c3f5a70'
+update endpoint set url='http://172.16.24.11:9696' where id='d28af9c0d9f84aaa817d18080ca7e77d'
+update endpoint set url='http://172.16.27.205:8774/v2/%(tenant_id)s' where id='38d37ee7c8314b98bc76b878e74c47ae'
+
+
+ssh -f -o Tunnel=ethernet -N -T -w 4097:4097 9.181.26.252
+ssh -f -o Tunnel=ethernet -N -T -w 3000:3000 9.110.51.20
+ifconfig tap3000 10.137.5.1/24 up
+
+#copy running-config startup-config
+
+
+ds job-create -t 1faec52b-3bbf-4070-9efb-2efc6dedabb7 -N "central_server_1=62060bd2-905e-4685-abbb-ccdaa7ba13b0;central_server_2=0c2d68ab-2eae-439f-82d9-ed8fcbd48697;central_server_3=6c245209-8e1f-479f-8efa-da5c47c8a970" -P "RegionName=RegionKVM" gemini-central-servers
+
+ds job-create -t c81d0e04-e966-4220-9187-aa54c38117b9 -N "kvm_region_server_p1=ca640f03-7558-4497-a2cb-db2a4bc0f744;kvm_region_server_s1=f2ee0e98-d79c-4b0b-9c64-1015d5b2d082;kvm_region_server_p2=431fc086-f896-44fe-ae96-9e99aab34686;kvm_region_server_s2=eb03421b-1cbb-434d-b733-e9b7aa1e1a21;kvm_compute=68d28eba-1cf6-4232-92ab-232ef77cbde7;neutron_network_node=2ce630dd-06b6-4764-a82b-052599131880" -P "ExtNetInterface=eth1;VniRange=10000:20000;VxlanMultiCastGroup=224.0.0.200;RegionName=RegionKVM" -p 1bd9f168-2d85-416f-bb50-0b352a9f73f7 gemini-kvm-neutron-ha
+
+ds job-create -t 82782b05-c3fd-4e00-a62f-7ab947d77ab4 -N "kvm_region_neutron=ca640f03-7558-4497-a2cb-db2a4bc0f744;kvm_compute=68d28eba-1cf6-4232-92ab-232ef77cbde7;neutron_network_node=2ce630dd-06b6-4764-a82b-052599131880" -P "ExtNetInterface=eth1;VniRange=10000:20000;VxlanMultiCastGroup=224.0.0.200;RegionName=RegionKVM" -p 1bd9f168-2d85-416f-bb50-0b352a9f73f7 gemini-kvm-neutron
+
+ds job-create -t ed716813-1e13-4fe1-9fc0-2606062b8693 -P  "VMHostIP=9.115.78.69;VMHostPassword=passw0rd;VMHostUserName=root;VMServerHost=9.115.78.69;VMServerPassword=passw0rd;VMServerUserName=root;VMDataCenterPath=gemini-cluster;VMDataStoreName=cloud-ds1;VniRange=10000:20000;VxlanMultiCastGroup=224.0.0.200;RegionName=RegionVMware"  -N "neutron_network_node=66edf5d9-fc66-41ef-86ce-c1524b8b2b7f;vmware_region_server=a8cc4ed0-2330-4922-9383-7352d95d50f3" -p 1bd9f168-2d85-416f-bb50-0b352a9f73f7 gemini-vmware-neutron
+
+/usr/bin/knife bootstrap 9.115.78.89 -c /etc/chef/knife.rb -N central_server_1-6jywm7zvxhva --template-file /etc/heat/erb/topology.erb -x root -P passw0rd -r role[f35b9ea0-1667-4f27-8cf8-0d0f95ab674e-central_server_1] -E OC_ENV-f35b9ea0-1667-4f27-8cf8-0d0f95ab674e --no-host-key-verify -V
+
+/usr/bin/knife bootstrap 9.115.78.97 -c /etc/chef/knife.rb -N central_server_2-6jywm7zvxhva --template-file /etc/heat/erb/topology.erb -x root -P passw0rd -r role[f35b9ea0-1667-4f27-8cf8-0d0f95ab674e-central_server_2] -E OC_ENV-f35b9ea0-1667-4f27-8cf8-0d0f95ab674e --no-host-key-verify -V
+
+{"ORCHESTRATION_DB_ADDR": "9.115.78.89", "OPENSTACK_SERVICE_PASSWORD": "passw0rd", "SERVICE_PASSWORDS_DATA_BAG": "service-OC_ENV-500e2400-848b-4286-bbbf-ba40ca3a7a79", "BROWSER_SIMPLE_TOKEN_SECRET": "qBg4YTUjWd1hsLqo1yeJ2w==", "BPM_IP": "9.115.78.97", "DASHBOARD_DB_ADDR": "9.115.78.89", "DB_PORT": "50000", "OPENSTACK_TOKEN": "EzzNhXb17ZsOu9j18Ek7jg==", "SIMPLE_TOKEN_SECRET": "EzzNhXb17ZsOu9j18Ek7jg==", "USER_PASSWORDS_DATA_BAG": "user-OC_ENV-500e2400-848b-4286-bbbf-ba40ca3a7a79", "Resources": [["central_server_1"], ["central_server_2"]], "METERING_API_ADDR": "9.115.78.89", "central_server_2_IP": "9.115.78.97", "ENABLE_DEBUG": "false", "IMAGE_DB_USERNAME": "glance", "NETWORK_DB_NAME": "openstac", "METERING_DB_NOSQL_USED": "true", "central_server_1_ROLE": "500e2400-848b-4286-bbbf-ba40ca3a7a79-central_server_1", "COMPUTE_DB_ADDR": "9.115.78.89", "BPM_FQDN": "9.115.78.97", "METERING_DB_NAME": "openstac", "NETWORK_DB_USERNAME": "neutron", "central_server_2_ROLE": "500e2400-848b-4286-bbbf-ba40ca3a7a79-central_server_2", "IMAGE_DB_NAME": "openstac", "DASHBOARD_DB_USERNAME": "dash", "NETWORK_SIZE": "256", "COMPUTE_DB_NAME": "openstac", "IDENTITY_API_ADDR": "9.115.78.89", "NET_INTERFACE": "eth0", "OPENSTACK_DATABASE_PASSWORD": "passw0rd", "DB_PASSWORDS_DATA_BAG": "db-OC_ENV-500e2400-848b-4286-bbbf-ba40ca3a7a79", "KEYSTONE_DB_USERNAME": "keystone", "OPENSTACK_USER_PASSWORD": "passw0rd", "DATABAG_KEY_PATH": "/etc/chef/databag_secret", "MEMCACHED_ADDR": "9.115.78.89", "DASHBOARD_DB_NAME": "openstac", "VOLUME_DB_ADDR": "9.115.78.89", "OPENSTACK_SECRET": "EzzNhXb17ZsOu9j18Ek7jg==", "NUM_NETWORKS": "1", "KEYSTONE_DB_NAME": "openstac", "NETWORK_DB_ADDR": "9.115.78.89", "ORCHESTRATION_DB_NAME": "openstac", "COMPUTE_DB_USERNAME": "nova", "KEYSTONE_DB_ADDR": "9.115.78.89", "DB_TYPE": "db2", "DATABAG_SECRET": "/etc/chef/databag_secret", "central_server_1_IP": "9.115.78.89", "METERING_DB_ADDR": "9.115.78.89", "IMAGE_DB_ADDR": "9.115.78.89", "VOLUME_DB_NAME": "openstac", "BPM_DB_ADDR": "9.115.78.89", "VOLUME_DB_USERNAME": "cinder", "METERING_DB_USERNAME": "ceil", "SECRETS_DATA_BAG": "secrets-OC_ENV-500e2400-848b-4286-bbbf-ba40ca3a7a79", "IDENTITY_ADMIN_API_ADDR": "9.115.78.89", "ORCHESTRATION_DB_USERNAME": "heat"} 
+
+nova-manage network create  --label=public --bridge=br0 --bridge_interface=eth1 --fixed_range_v4=10.0.1.0/24  --num_networks=1 --network_size=255
+
+nova --debug network-create --fixed-range-v4 9.115.78.0/24 --bridge data-9x --multi-host F --fixed-cidr 9.115.78.176/29 9x-net
+
+iptables -t nat -A POSTROUTING -s 10.137.10.0/24 -j MASQUERADE
+
+think
+
+qemu-img create -f qcow2 -b /var/gemini-vms/base/rhel65-ext3-base.qcow2 kvm-region.qcow2 50G
+virt-filesystems --long --parts --blkdevs -h -a central-1.qcow2
+virt-resize --expand /dev/sda2 indisk outdisk
+
+/opt/ibm/db2/V10.5/java/jdk64/bin/java -classpath /opt/ibm/db2/V10.5/json/lib/db2NoSQLWireListener.jar:/opt/ibm/db2/V10.5/json/lib/nosqljson.jar:/opt/ibm/db2/V10.5/json/lib/js.jar:/opt/ibm/db2/V10.5/json/../java/db2jcc.jar:/opt/ibm/db2/V10.5/json/../java/db2jcc4.jar com.ibm.nosql.json.cmd.NoSqlCmdLine --url jdbc:db2://localhost:50000/openstac --user ceil --password passw0rd --traceFile /home/db2inst1/json/logs/trace_nosql.log --traceLevel ALL
+
+rpm -qpl name.rpm
+rpm2cpio name.rpm | cpio -idmv
+
+nm *.so
+readelf -a *.so
+
+mount -t ceph 172.16.27.27:6789,172.16.27.21:6789,172.16.27.24:6789:/ /mnt/ -o name=admin,secret=AQCT8U9TKFtVExAACsbgMxpJtxLIZae6/HcHFw==
+
+cbt (ceph benchmark tool), blktrace, collectl, perf
+
+ceph osd crush remove osd.1
+ceph auth del osd.1
+ceph osd rm 1
+
+hdparm
+
+parted /dev/sdb
+mkpart primary 0 10GB
+mkpart primary 10GB -1s
+
+[global]
+	fsid = cb750945-9585-4699-b231-808694fde55f
+	public network = 172.16.27.0/24
+	cluster network = 172.16.27.0/24
+	auth cluster required = cephx
+	auth service required = cephx
+	auth client required = cephx
+	osd journal size = 4096
+	filestore xattr use omap = true
+	osd pool default size = 2
+	osd pool default min size = 1
+	osd pool default pg num = 1024
+	osd pool default pgp num = 1024
+	osd crush chooseleaf type = 0
+
+[mon]
+	mon initial members = R27-IDP-21
+	debug mon = 20
+
+[mon.R27-IDP-21]
+	host = R27-IDP-21
+	mon addr = 172.16.27.21:6789
+
+mon:
+ceph-authtool --create-keyring /tmp/ceph.mon.keyring --gen-key -n mon. --cap mon 'allow *'
+ceph-authtool --create-keyring /etc/ceph/ceph.client.admin.keyring --gen-key -n client.admin --set-uid=0 --cap mon 'allow *' --cap osd 'allow *' --cap mds 'allow'
+ceph-authtool /tmp/ceph.mon.keyring --import-keyring /etc/ceph/ceph.client.admin.keyring
+monmaptool --create --add R27-IDP-21 172.16.27.21 --fsid cb750945-9585-4699-b231-808694fde55f /tmp/monmap
+mkdir -p /var/lib/ceph/mon/ceph-R27-IDP-21
+ceph-mon --mkfs -i R27-IDP-21 --monmap /tmp/monmap --keyring /tmp/ceph.mon.keyring
+/etc/init.d/ceph start mon.R27-IDP-21
+
+add mons:
+
+# copy the ceph configuration and admin client key file to /etc/ceph/
+mkdir -p /var/lib/ceph/mon/ceph-R27-IDP-24
+mkdir -p ~/temp
+cd ~/temp
+ceph auth get mon. -o ~/temp/ceph.mon.keyring
+ceph mon getmap -o ~/temp/ceph.map
+ceph-mon -i R27-IDP-24 --mkfs --monmap ~/temp/ceph.map --keyring ~/temp/ceph.mon.keyring
+ceph mon add R27-IDP-24 172.16.27.24
+ceph-mon -i R27-IDP-24 --public-addr 172.16.27.24
+
+mkdir -p /var/lib/ceph/mon/ceph-R27-IDP-27
+mkdir -p ~/temp
+cd ~/temp
+ceph auth get mon. -o ~/temp/ceph.mon.keyring
+ceph mon getmap -o ~/temp/ceph.map
+ceph-mon -i R27-IDP-27 --mkfs --monmap ~/temp/ceph.map --keyring ~/temp/ceph.mon.keyring
+ceph mon add R27-IDP-27 172.16.27.27
+ceph-mon -i R27-IDP-27 --public-addr 172.16.27.27
+
+
+touch /var/run/ceph/mon.r83x6u16.pid; echo `ps -ef | grep "ceph-mon" | grep -v grep | tail -n1 | awk '{print $2}'` > /var/run/ceph/mon.r83x6u16.pid
+
+osd:
+
+ceph-disk prepare --cluster ceph --cluster-uuid cb750945-9585-4699-b231-808694fde55f --fs-type xfs /dev/sdb2 /dev/sdb1
+ceph-disk activate /dev/sdb2
+
+ceph osd create
+mkdir -p /var/lib/ceph/osd/ceph-0
+mkfs -t xfs -i size=2048 -f /dev/sdb2
+mount -t xfs /dev/sdb2 /var/lib/ceph/osd/ceph-0
+ceph-osd -i 0 --mkfs --mkkey
+ceph auth add osd.0 osd 'allow *' mon 'allow profile osd' -i /var/lib/ceph/osd/ceph-0/keyring
+ceph osd crush add-bucket R27-IDP-21 host
+ceph osd crush move R27-IDP-21 root=default
+ceph osd crush add osd.0 1.08 host=R27-IDP-21
+/etc/init.d/ceph start osd.0
+# add /etc/fstab
+
+ceph osd create
+mkdir -p /var/lib/ceph/osd/ceph-1
+mkfs -t xfs -i size=2048 -f /dev/sdc2
+mount -t xfs /dev/sdc2 /var/lib/ceph/osd/ceph-1
+ceph-osd -i 1 --mkfs --mkkey
+ceph auth add osd.1 osd 'allow *' mon 'allow profile osd' -i /var/lib/ceph/osd/ceph-1/keyring
+ceph osd crush add-bucket R27-IDP-21 host
+ceph osd crush move R27-IDP-21 root=default
+ceph osd crush add osd.1 1.08 host=R27-IDP-21
+/etc/init.d/ceph start osd.1
+# add /etc/fstab
+
+ceph osd create
+mkdir -p /var/lib/ceph/osd/ceph-2
+mkfs -t xfs -i size=2048 -f /dev/sdd2
+mount -t xfs /dev/sdd2 /var/lib/ceph/osd/ceph-2
+ceph-osd -i 2 --mkfs --mkkey
+ceph auth add osd.2 osd 'allow *' mon 'allow profile osd' -i /var/lib/ceph/osd/ceph-2/keyring
+ceph osd crush add-bucket R27-IDP-21 host
+ceph osd crush move R27-IDP-21 root=default
+ceph osd crush add osd.2 1.08 host=R27-IDP-21
+/etc/init.d/ceph start osd.2
+
+ceph osd create
+mkdir -p /var/lib/ceph/osd/ceph-3
+mkfs -t xfs -i size=2048 -f /dev/sde2
+mount -t xfs /dev/sde2 /var/lib/ceph/osd/ceph-3
+ceph-osd -i 3 --mkfs --mkkey
+ceph auth add osd.3 osd 'allow *' mon 'allow profile osd' -i /var/lib/ceph/osd/ceph-3/keyring
+ceph osd crush add-bucket R27-IDP-21 host
+ceph osd crush move R27-IDP-21 root=default
+ceph osd crush add osd.3 1.08 host=R27-IDP-21
+/etc/init.d/ceph start osd.3
+# add /etc/fstab
+
+ceph osd create
+mkdir -p /var/lib/ceph/osd/ceph-4
+mkfs -t xfs -i size=2048 -f /dev/sdf2
+mount -t xfs /dev/sdf2 /var/lib/ceph/osd/ceph-4
+ceph-osd -i 4 --mkfs --mkkey
+ceph auth add osd.4 osd 'allow *' mon 'allow profile osd' -i /var/lib/ceph/osd/ceph-4/keyring
+ceph osd crush add-bucket R27-IDP-21 host
+ceph osd crush move R27-IDP-21 root=default
+ceph osd crush add osd.4 1.08 host=R27-IDP-21
+/etc/init.d/ceph start osd.4
+# add /etc/fstab
+
+ceph --admin-daemon /var/run/ceph/ceph-mon.R27-IDP-21.asok config show
+ceph --admin-daemon /var/run/ceph/ceph-osd.0.asok config show
+ceph tell osd.* injectargs '--osd-bench-large-size-max-throughput 419430400'
+
+ceph osd getcrushmap -o crush_map.b
+crushtool -d crush_map.b -o crush_map.d
+crushtool -c crush_map.d -o crush_map.b_new
+ceph osd setcrushmap -i crush_map.b_new
+
+ceph osd pool create test_2 256 256
+ceph osd pool create test_3 256 256
+ceph osd pool set test_3 size 3
+
+rados --pool test_2 put group /etc/group
+rados --pool test_2 get group ./group
+
+rados bench -p test_2 --concurrent-ios=256 300 write
+rados bench -p test_2 --concurrent-ios=256 --no-cleanup 60 write 
+rados bench -p test_2 --concurrent-ios=256 300 seq
+
+yum install kmod-rbd
+rados mkpool rbd_test
+rbd -p rbd_test create --size 20000 rbd_test
+rbd -p rbd_test map rbd_test
+mkfs -t xfs /dev/rbd/rbd_test/rbd_test
+mount /dev/rbd/rbd_test/rbd_test /mnt
+
+umount /mnt
+rbd -p rbd_test unmap /dev/rbd/rbd_test/rbd_test
+
+failed: 'timeout 30 /usr/bin/ceph -c /etc/ceph/ceph.conf --name=osd.0 --keyring=/var/lib/ceph/osd/ceph-0/keyring osd crush create-or-move -- 0 0.41 host=R27-IDP-21 root=default'
+
+raw disk:
+
+RAID "Write Through":
+
+[root@R27-IDP-21 ceph-1]# dd if=/dev/zero of=./test_raw bs=4M count=1000 oflag=direct
+1000+0 records in
+1000+0 records out
+4194304000 bytes (4.2 GB) copied, 11.8729 s, 353 MB/s
+[root@R27-IDP-21 ceph-1]# 
+
+RAID "Always Write Back":
+
+[root@R27-IDP-21 ceph-4]# dd if=/dev/zero of=./test_raw bs=4M count=1000 oflag=direct
+1000+0 records in
+1000+0 records out
+4194304000 bytes (4.2 GB) copied, 9.88171 s, 424 MB/s
+
+dd to ceph RBD:
+
+[root@ceph-test1 mnt]# dd if=/dev/zero of=./test_raw bs=4M count=1000 oflag=direct
+1000+0 records in
+1000+0 records out
+4194304000 bytes (4.2 GB) copied, 43.2201 s, 97.0 MB/s
+[root@ceph-test1 mnt]# dd if=/dev/zero of=./test_raw_1G bs=1G count=4 oflag=direct
+4+0 records in
+4+0 records out
+4294967296 bytes (4.3 GB) copied, 37.5703 s, 114 MB/s
+
+[root@ceph-admin ~]# date; rados --pool test_3 put rhel7-x64-iso ~/RHEL-7.0-20140507.0-Server-x86_64-dvd1.iso ; date
+Thu Sep 11 14:51:07 HKT 2014
+Thu Sep 11 14:51:59 HKT 2014
+
+
+ceph-disk prepare --cluster ceph --cluster-uuid cb750945-9585-4699-b231-808694fde55f --fs-type xfs /dev/sdc2 /dev/sdc1
+ceph-disk activate /dev/sdc2
+
+ceph-disk prepare --cluster ceph --cluster-uuid cb750945-9585-4699-b231-808694fde55f --fs-type xfs /dev/sdd2 /dev/sdd1
+ceph-disk activate /dev/sdd2
+
+[root@R27-IDP-21 ceph]# ceph-disk prepare --cluster ceph --cluster-uuid 86090d00-c6bf-4de9-94f6-168d2bcd30d1 --fs-type xfs /dev/sdc2 /dev/sdc1
+WARNING:ceph-disk:OSD will not be hot-swappable if journal is not the same device as the osd data
+meta-data=/dev/sdc2              isize=2048   agcount=4, agsize=72509632 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=0
+data     =                       bsize=4096   blocks=290038528, imaxpct=5
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=0
+log      =internal log           bsize=4096   blocks=141620, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+
+[root@R27-IDP-21 ceph]# mkfs -t xfs -i size=2048 -f /dev/sdb2
+meta-data=/dev/sdb2              isize=2048   agcount=4, agsize=72509632 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=0
+data     =                       bsize=4096   blocks=290038528, imaxpct=5
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=0
+log      =internal log           bsize=4096   blocks=141620, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+
+ceph osd pool create volumes 256 256
+ceph osd pool create images 256 256
+ceph osd pool set volumes size 3
+ceph osd pool set images size 3
+
+ceph auth get-or-create client.cinder mon 'allow r' osd 'allow class-read object_prefix rbd_children, allow rwx pool=volumes, allow rwx pool=vms, allow rx pool=images'
+ceph auth get-or-create client.glance mon 'allow r' osd 'allow class-read object_prefix rbd_children, allow rwx pool=images'
+
+ceph auth get-or-create client.glance | ssh {your-glance-api-server} sudo tee /etc/ceph/ceph.client.glance.keyring
+ssh {your-glance-api-server} sudo chown glance:glance /etc/ceph/ceph.client.glance.keyring
+ceph auth get-or-create client.cinder | ssh {your-volume-server} sudo tee /etc/ceph/ceph.client.cinder.keyring
+ssh {your-cinder-volume-server} sudo chown cinder:cinder /etc/ceph/ceph.client.cinder.keyring
+
+ceph auth caps client.cinder mon 'allow r' osd 'allow class-read object_prefix rbd_children, allow rwx pool=volumes, allow rwx pool=vms, allow rwx pool=images'
+updated caps for client.cinder
+
+virsh secret-define --file /etc/ceph/libvirt-key.xml
+virsh secret-get-value dea66dcd-d661-4569-983a-b4a6e6f36824
+
+neutron net-create netgre-1 --tenant-id 58c0b4e7a3964e1488ac1e3d757c7df6 --provider:network_type gre --provider:segmentation_id 1000
+neutron subnet-create netgre-1 10.100.100.0/24 --name gre-1-subnet
+neutron subnet-create netgre-1 10.100.100.0/24 --name gre-1-subnet
+neutron router-create router-9x
+neutron router-interface-add router-9x netgre-1
+neutron net-create public-9x --router:external=True --provider:network_type flat --provider:physical_network physnet3
+neutron subnet-create public-9x 9.110.178.0/24 --name public_subnet --disable-dhcp --allocation-pool start=9.110.178.100,end=9.110.178.150 --gateway=9.110.178.1
+neutron router-gateway-set router-9x public-9x
+neutron floatingip-create public-9x
+
+neutron floatingip-associate e03e5459-d7d1-4101-b322-2b5e963b412a 2b093b2c-9162-495e-a3a3-4f9f9ed192c3
+
+cirros/cubswin:)
+
+virt-edit -a ctl-1.qcow2 /etc/sysconfig/network
+
+ssh -D *:9999 158.85.164.5
+
+
+systemctl restart openstack-nova-metadata-api
+systemctl enable openstack-nova-metadata-api
+
+iptables -I INPUT -d 172.16.0.101 -p tcp -m multiport --dports 5900:6100 -j ACCEPT
+
+losetup
+kpartx
+chroot
+
+[mabo@mabo-macmini mustang_vpn]$ echo $((0x3e8))
+1000
+[mabo@mabo-macmini mustang_vpn]$ printf '%x\n' 1000
+3e8
+[mabo@mabo-macmini mustang_vpn]$ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

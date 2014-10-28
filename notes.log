@@ -1,0 +1,250 @@
+cough syncope syndrome
+
+rtcBuildFilesLocation
+
+rtcBuildFilesLocation="build/bigbfiles"
+
+
+busybox
+
+ash
+
+compat-libstdc++-33-3.2.3-69.el6.x86_64.rpm 
+
+brctl showstp br0 | grep -i delay
+brctl setfd br0 0
+
+
+ifconfig -a
+brctl show
+brctl showstp $BRIDGENAME
+sysctl -a | grep ip_forward
+iptables -L -n -v
+iptables -t nat -L -n -v
+
+netstat -nap|grep 10000
+
+iscsiadm -m node -U all
+iscsiadm -m node -o delete
+
+multipath -ll
+
+rpm -qa|grep hslt|xargs rpm -e
+
+15810082915
+
+echo 3 > /proc/sys/vm/drop_caches
+
+scp -o StrictHostKeyChecking=no
+
+ssh -o StrictHostKeyChecking=no 172.16.7.96
+
+25 07 * * * /web/httpd/cgi-bin/v8/lmfCheck.pl > /dev/null 2>&1
+
+* 8 * * * /data/run_all.sh > /tmp/run_all.log 2>&1
+
+# Setting DELAY=0 in the ifcfg config file solves the problem.
+
+201vpn: root/zhu88jie
+
+/sbin/iptables -t nat --append POSTROUTING -o eth1 --source 172.16.7.0/24 --jump MASQUERADE
+
+export LD_LIBRARY_PATH=/opt/ibm/java-x86_64-60/jre/lib/amd64/j9vm:/usr/lib64:$LD_LIBRARY_PATH
+
+
+touch `hostname`
+
+tftp 172.16.7.101 -c put computenode common/computenode
+
+dd if=/dev/zero of=/data/vm/riak/riak.img bs=4K count=2048K
+
+dd if=/dev/zero of=/data/vm/riak/riak.img bs=4K count=2048K
+dd if=/dev/zero of=/data/vm/zook01/zook01.img bs=4K count=2048K
+dd if=/dev/zero of=/data/vm/zook02/zook02.img bs=4K count=2048K
+dd if=/dev/zero of=/data/vm/zook03/zook03.img bs=4K count=2048K
+
+dd if=/dev/zero of=./zodiac_tdw_db2_1 bs=4K seek=10240K count=0
+
+
+./iaas-register-image  -i centos-uniform -t image -a x86_64 -p linux -m public 
+
+
+# image ---------------------------
+#=begin
+bucket = "images"
+id = "centos-uniform"
+
+record["file_id"] = "centos-uniform"
+record["type"] = "image"
+record["create_time"] = DateTime.now
+record["arch"] = "x86_64"
+record["description"] = "Uniform CentOS for test"
+record["state"] = "available"
+record["user_prefix"] = "admin"
+record["replication"] = "2"
+record["kernel"] = ""
+record["ramdisk"] = ""
+record["platform"] = "linux"
+#=end
+#----------------------------------
+
+
+
+/var/named
+===============================================================
+
+Hadoop/HBase:
+
+mkdir -p /var/hadoop/filesystem/data
+mkdir -p /var/hadoop/filesystem/name
+mkdir -p /var/hadoop/mapred/system
+mkdir -p /var/hadoop/mapred/local
+
+hadoop-env.sh:
+
+sed -ie "s/# export JAVA_HOME=\/usr\/lib\/j2sdk1.5-sun/export JAVA_HOME=\/opt\/ibm\/java-x86_64-60/" /opt/IHC-0.20.2/conf/hadoop-env.sh 
+
+
+masters:
+
+echo "iaas-zookeeper-01" > /opt/IHC-0.20.2/conf/masters 
+
+slaves:
+
+echo "iaas-zookeeper-02" > /opt/IHC-0.20.2/conf/slaves
+echo "iaas-zookeeper-03" >> /opt/IHC-0.20.2/conf/slaves
+
+cd /opt/IHC-0.20.2
+bin/hadoop namenode -format
+
+cd /opt/IHC-0.20.2
+bin/start-all.sh
+
+
+ssh iaas-zookeeper-02 -o StrictHostKeyChecking=no
+
+
+HBase:
+
+mkdir -p /var/hbase-0.20.6
+
+regionservers:
+
+echo "iaas-zookeeper-02" > /opt/hbase-0.20.6/conf/regionservers
+echo "iaas-zookeeper-03" >> /opt/hbase-0.20.6/conf/regionservers
+
+hbase org.apache.hadoop.hbase.io.hfile.HFile
+
+cd /opt/hbase-0.20.6
+ln -s /opt/IHC-0.20.2/conf/hdfs-site.xml .
+
+
+./iaas-register-image -i centos-uniform -t image -a x86_64 -p linux -d "bvt centos-uniform"
+./iaas-register-image -i centos-cvt -t image -a x86_64 -p linux -d "bvt centos-cvt"
+./iaas-register-image -i perfect-centos -t image -a x86_64 -p linux -d "bvt perfect-centos"
+
+./iaas-register-addresses -f address.txt
+
+./iaas-assign-users-to-usergroup -g bvtadmin -u admin
+
+./iaas-create-usergroup -g bvtadmin -d bvtadmingroup
+
+./iaas-register-image -i centos-cvt -t image -a x86_64 -p linux -d "bvt centos-55"
+
+172.16.7.221   iaas-zookeeper-01
+172.16.7.207   iaas-zookeeper-02
+172.16.7.222   iaas-zookeeper-03
+
+172.16.7.122   webservice
+
+./iaas-register-addresses -f address.txt 
+
+
+Operation: table_get, row_put
+Table_name: xxx
+
+Operation: table_delete_all
+Delete-All: hsLt-de1ete-A11
+
+Operation: table_delete
+Table_name:xxx
+
+Operation: table_createsc
+Table_name:xxx
+
+* 5 * * * /data/run_all.sh > /tmp/run_all.log 2>&1
+
+
+#cd /usr/lib/ruby/gems/1.8/gems/ruby-ldap-0.9.11
+#ruby extconf.rb
+#make
+#make install
+
+
+XEN:
+
+cd /lib/modules/2.6.32.24/
+
+for i in `find | grep xen | grep .ko`; do modprobe `basename $i .ko`; done
+
+/etc/init.d/xend start
+
+xm list |awk '{print $2}' | xargs | tr -d 'ld-' |cut -d' ' -f3-
+
+for i in `ls ./ |awk '$NF ~ /tar.gz$/ {print $NF}'`;do tar -zxf  $i -C /tmp/ ;done
+
+./iaas-register-image -i super-centos -t image -a x86_64 -p linux -d "xen test" -k vmlinuz-centos -r initrd-centos
+curl -d '[{"key":"super-centos","ramdisk":"initrd-centos"}]' -H "Operation:row_update" -H "Table_name:images" http://172.16.10.101:33080/hbase/
+
+find -name '.svn' | while read directory; do  echo $directory; rm -rf "$directory"; done;
+
+$HADOOP_HOME/bin/hadoop-daemon.sh start datanode
+$HADOOP_HOME/bin/hadoop-daemon.sh start tasktracker
+$HADOOP_HOME/bin/hbase-daemon.sh start regionserver
+
+
+
+for i in 10.10.1.{3..34}; do scp -p $i:/var/log/iaas/r*.idp*.log* .; done
+
+[root@r001idp041 ~]# rsync -avS --progress /iaas/iaas-store/files/img-47881 10.10.1.39:/iaas/iaas-store/files/
+
+grep "2011-10-13" *.log* | grep "iaas_run_instance" |grep "start to launch" | wc -l
+
+ssh -L 9.123.127.163:50000:9.123.127.200:50000 localhost
+
+for i in `ifconfig | grep eth | awk '{print $1}'`; do ethtool $i; done 
+
+
+[root@r004idp033 ~]# curl -H "Operation:row_delete" -H "Table_name:volumes" -d '["vol-42227-u45341"]' http://10.10.3.38:33080/hbase
+["vol-42227-u45341"][root@r004idp033 ~]# 
+[root@r004idp033 ~]# 
+[root@r004idp033 ~]# curl -H "Operation:row_delete" -H "Table_name:volumes" -d '["vol-55230-u48431"]' http://10.10.3.38:33080/hbase 
+["vol-55230-u48431"][root@r004idp033 ~]# 
+
+
+9.115.73.165
+
+qemu-img convert -f raw -O raw img-26731 img-26731.sparse
+
+qemu-img convert -f raw -O raw /iaas/iaas-store/files/w2k8-x64-r2eeN w2k8-x64-r2eeN.sparse
+
+cd /opt/IBM/ITM/lx8266/00/bin/Scripts/statistics/lib
+
+ip route add 10.10.0.0/16 via 10.10.3.1 dev eth1
+
+ITM_framework_623FP1
+
+openssl pkcs8 -topk8 -in <HSLT_private_key> -outform DER -out <converted_key> -nocrypt
+
+connect 'jdbc:derby://localhost:1527//drouter/ramdisk2/mnt/raid-volume/raid0/databases/rainmaker-db;create=true';
+
+snmpwalk -v 1 -c ywk8liaojx3xwlif6 9.123.127.9
+
+for i in 172.16.0.{100..115}; do scp -o StrictHostKeyChecking=no -p /etc/snmp/snmpd.conf $i:/etc/snmp/; ssh -o StrictHostKeyChecking=no $i "service snmpd restart"; done 
+
+dmidecode
+
+
+db2 import from /dev/null of del replace into itmuser.KV1_VIRTUAL_MACHINES
+
+curl -sS -k -u "root:object00" -X GET https://172.16.22.6:8422/ibm/director/rest/VMControl/workloads/475631
