@@ -595,6 +595,7 @@ ceph osd crush add osd.4 1.08 host=R27-IDP-21
 ceph --admin-daemon /var/run/ceph/ceph-mon.R27-IDP-21.asok config show
 ceph --admin-daemon /var/run/ceph/ceph-osd.0.asok config show
 ceph tell osd.* injectargs '--osd-bench-large-size-max-throughput 419430400'
+ceph tell osd.* injectargs '--osd-op-threads 4'
 
 ceph osd getcrushmap -o crush_map.b
 crushtool -d crush_map.b -o crush_map.d
@@ -703,6 +704,7 @@ ceph auth caps client.cinder mon 'allow r' osd 'allow class-read object_prefix r
 updated caps for client.cinder
 
 virsh secret-define --file /etc/ceph/libvirt-key.xml
+virsh secret-set-value --secret dea66dcd-d661-4569-983a-b4a6e6f36824 --base64 AQD0ZCVUMOS6EhAAAqswAN263yDJkJmegRf6rw==
 virsh secret-get-value dea66dcd-d661-4569-983a-b4a6e6f36824
 
 neutron net-create netgre-1 --tenant-id 58c0b4e7a3964e1488ac1e3d757c7df6 --provider:network_type gre --provider:segmentation_id 1000
@@ -739,20 +741,39 @@ chroot
 3e8
 [mabo@mabo-macmini mustang_vpn]$ 
 
+nova boot --user-data ./cloud-config.yaml --config-drive true --image coreos_444.5 --key-name coreos --flavor m1.medium --num-instances 3 --nic net-id=7897a259-752e-4423-b662-ce6a85cdc9e3 --nic net-id=82b0231a-99ba-4e76-a11e-fb5fc519b8cd coreos
 
 
+cfdisk
+
+od -t x1 -A d ../vmlinuz-3.11.10-301.fc20.x86_64 | grep "1f 8b 08"
+dd if=../vmlinuz-3.11.10-301.fc20.x86_64 bs=1 skip=17602 | zcat > vmlinuz
 
 
+cpio -idmv < ../initramfs-3.11.10-301.fc20.x86_64.img
+
+for i in `ls /etc/systemd/system/multi-user.target.wants/|grep -v "^a\|^c\|^i\|^k\|^N\|^nt\|^p\|^re\|^rs\|^s\|^t"`; do systemctl restart $i; done
 
 
+for i in `ls /etc/systemd/system/multi-user.target.wants/|grep -v "^a\|^c\|^i\|^k\|^l\|^m\|^N\|^net\|^ntp\|^nf\|^p\|^r\|^s\|^t"`; do echo $i; systemctl restart $i; done
+
+CREATE DATABASE sahara DEFAULT CHARACTER SET utf8;
+
+CREATE USER 'sahara'@'localhost' IDENTIFIED BY 'sahara';
+
+GRANT ALL ON sahara.* TO 'sahara'@'%' IDENTIFIED BY 'sahara';
+
+keystone user-create --name sahara --tenant 29320bdbf3784544a9b4fa56cccfc615 --pass openstack-sahara --enabled true
+
+keystone user-role-add --user sahara --role admin --tenant 29320bdbf3784544a9b4fa56cccfc615
 
 
+keystone service-create --name sahara --type data_processing \
+    --description "Sahara Data Processing"
 
-
-
-
-
-
-
+keystone endpoint-create --service sahara --region Gemini \
+    --publicurl "http://172.16.0.40:8386/v1.1/\$(tenant_id)s" \
+    --adminurl "http://172.16.0.40:8386/v1.1/\$(tenant_id)s" \
+    --internalurl "http://172.16.0.40:8386/v1.1/\$(tenant_id)s"
 
 
