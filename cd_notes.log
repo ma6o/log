@@ -776,4 +776,6 @@ keystone endpoint-create --service sahara --region Gemini \
     --adminurl "http://172.16.0.40:8386/v1.1/\$(tenant_id)s" \
     --internalurl "http://172.16.0.40:8386/v1.1/\$(tenant_id)s"
 
+for i in `ceph health detail|grep ^pg|awk '{print $2}'`; do ceph pg repair $i; done
 
+perl mysql-stress-test.pl --server-host 172.16.0.33 --server-port 3306 --stress-basedir=/root/mysql_st --stress-suite-basedir=/usr/local/mysql/mysql-test/suite/stress --server-logs-dir=/root/mysql_st/logs --test-count=20  --threads=5 --server-user=root --server-database=test --stress-tests-file=/usr/local/mysql/mysql-test/suite/stress/t/ddl_memory.test
