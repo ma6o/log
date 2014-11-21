@@ -717,6 +717,15 @@ neutron subnet-create public-9x 9.110.178.0/24 --name public_subnet --disable-dh
 neutron router-gateway-set router-9x public-9x
 neutron floatingip-create public-9x
 
+neutron net-create bluemix-n1 --tenant-id 5cf5234d1e414d5e9c15acf312592873 --provider:network_type gre --provider:segmentation_id 1001
+neutron subnet-create bluemix-n1 10.100.90.0/24 --name bluemix-sn1 --tenant-id 5cf5234d1e414d5e9c15acf312592873
+neutron router-create bluemix-r1 --tenant-id 5cf5234d1e414d5e9c15acf312592873
+neutron router-interface-add bluemix-r1 bluemix-sn1
+neutron net-create bluemix-p1 --tenant-id 5cf5234d1e414d5e9c15acf312592873 --router:external=True --provider:network_type flat --provider:physical_network physnet4
+neutron subnet-create bluemix-p1 9.110.178.0/24 --name bluemix-ps1 --disable-dhcp --allocation-pool start=9.110.178.151,end=9.110.178.170 --gateway=9.110.178.1
+neutron router-gateway-set bluemix-r1 public-9x
+neutron floatingip-create bluemix-p1
+
 neutron floatingip-associate e03e5459-d7d1-4101-b322-2b5e963b412a 2b093b2c-9162-495e-a3a3-4f9f9ed192c3
 
 cirros/cubswin:)
@@ -794,3 +803,9 @@ for i in `ceph health detail|grep ^pg|awk '{print $2}'`; do ceph pg repair $i; d
 perl mysql-stress-test.pl --server-host 172.16.0.33 --server-port 3306 --stress-basedir=/root/mysql_st --stress-suite-basedir=/usr/local/mysql/mysql-test/suite/stress --server-logs-dir=/root/mysql_st/logs --test-count=20  --threads=5 --server-user=root --server-database=test --stress-tests-file=/usr/local/mysql/mysql-test/suite/stress/t/ddl_memory.test
 
 
+for pgnum in `ceph pg dump|grep active|awk '{print $1}'`; do ceph pg deep-scrub $pgnum; done
+
+ceph pg dump | egrep '^[0-9a-f]+\.[0-9a-f]+' | awk '{print $20, $21, $1, $14;}' | sort -nr | tail -40
+ceph daemon osd.8 dump_ops_in_flight
+
+"filestore_xfs_extsize": "false"
