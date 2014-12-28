@@ -1,0 +1,11 @@
+xcode-select --install
+
+sudo easy_install pip
+
+netstat -nr
+
+sudo route -n delete 9.0.0.0/8 9.112.152.1
+
+defaults write com.adiumX.adiumX AISametimeMinorVersion -integer 5295
+
+192.168.1.50~80
