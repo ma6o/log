@@ -1,4 +1,7 @@
 iptables -t nat -A POSTROUTING -j MASQUERADE
+iptables -t nat -A POSTROUTING -s 10.137.10.0/24 -j MASQUERADE
+iptables -I INPUT -d 172.16.0.101 -p tcp -m multiport --dports 5900:6100 -j ACCEPT
+iptables -I INPUT -s 9.123.102.95 -j DROP
 
 set tabstop=4
 set softtabstop=4
@@ -20,7 +23,6 @@ PXE.NicPortMacAddress.1=E4-1F-13-EF-0D-62
 [root@gemini-mn01 asu]#
 
 [root@gemini-mn01 asu]# ipmitool -H 172.29.101.62 -U USERID -P PASSW0RD power off
-Chassis Power Control: Down/Off
 [root@gemini-mn01 asu]# ipmitool -H 172.29.101.62 -U USERID -P PASSW0RD power on
 Chassis Power Control: Up/On
 [root@gemini-mn01 asu]# 
@@ -442,7 +444,6 @@ nova-manage network create  --label=public --bridge=br0 --bridge_interface=eth1 
 
 nova --debug network-create --fixed-range-v4 9.115.78.0/24 --bridge data-9x --multi-host F --fixed-cidr 9.115.78.176/29 9x-net
 
-iptables -t nat -A POSTROUTING -s 10.137.10.0/24 -j MASQUERADE
 
 think
 
@@ -703,6 +704,26 @@ ssh {your-cinder-volume-server} sudo chown cinder:cinder /etc/ceph/ceph.client.c
 ceph auth caps client.cinder mon 'allow r' osd 'allow class-read object_prefix rbd_children, allow rwx pool=volumes, allow rwx pool=vms, allow rwx pool=images'
 updated caps for client.cinder
 
+# add monitor
+ceph mon remove r83x6u20
+mkdir -p /var/lib/ceph/mon/ceph-r83x6u20
+ceph auth get mon. -o ./auth.mon
+ceph mon getmap -o ./map.20150212
+ceph-mon -i r83x6u20 --mkfs --monmap ./map.20150212 --keyring ./auth.mon
+ceph mon add r83x6u20 10.0.0.203
+# add /etc/ceph/ceph.conf
+service ceph -a start mon.r83x6u20
+
+# remove osd
+ceph osd out 1
+ceph osd lost 1 --yes-i-really-mean-it
+/etc/init.d/ceph stop osd.1
+ceph osd crush remove osd.1
+ceph auth del osd.1
+ceph osd rm 1
+# remove osd.1 from /etc/ceph/ceph.conf
+ceph osd in 1
+
 virsh secret-define --file /etc/ceph/libvirt-key.xml
 virsh secret-set-value --secret dea66dcd-d661-4569-983a-b4a6e6f36824 --base64 AQD0ZCVUMOS6EhAAAqswAN263yDJkJmegRf6rw==
 virsh secret-get-value dea66dcd-d661-4569-983a-b4a6e6f36824
@@ -733,16 +754,19 @@ cirros/cubswin:)
 virt-edit -a ctl-1.qcow2 /etc/sysconfig/network
 
 ssh -D *:9999 158.85.164.5
-
+ssh -o StrictHostKeyChecking=no
 
 systemctl restart openstack-nova-metadata-api
 systemctl enable openstack-nova-metadata-api
 
-iptables -I INPUT -d 172.16.0.101 -p tcp -m multiport --dports 5900:6100 -j ACCEPT
-
 losetup
 kpartx
 chroot
+
+# cd /mnt/arch
+# mount -t proc proc proc/
+# mount --rbind /sys sys/
+# mount --rbind /dev dev/
 
 # losetup  -f sahara-juno-hdp-2.0.6-centos-6.5.raw_update
 # losetup -a
@@ -802,10 +826,49 @@ for i in `ceph health detail|grep ^pg|awk '{print $2}'`; do ceph pg repair $i; d
 
 perl mysql-stress-test.pl --server-host 172.16.0.33 --server-port 3306 --stress-basedir=/root/mysql_st --stress-suite-basedir=/usr/local/mysql/mysql-test/suite/stress --server-logs-dir=/root/mysql_st/logs --test-count=20  --threads=5 --server-user=root --server-database=test --stress-tests-file=/usr/local/mysql/mysql-test/suite/stress/t/ddl_memory.test
 
+fio -filename=/dev/sdc2 -direct=1 -iodepth 1 -thread -rw=randrw -rwmixread=70 -ioengine=psync -bs=16k -size=200G -numjobs=30 -runtime=100 -group_reporting -name=sdc_4k
+
+dd if=/dev/zero of=/mnt/deleteme bs=4M count=1024 conv=fdatasync
 
 for pgnum in `ceph pg dump|grep active|awk '{print $1}'`; do ceph pg deep-scrub $pgnum; done
 
 ceph pg dump | egrep '^[0-9a-f]+\.[0-9a-f]+' | awk '{print $20, $21, $1, $14;}' | sort -nr | tail -40
 ceph daemon osd.8 dump_ops_in_flight
 
+ceph pg 4.50 query
+
+for i in `ls|grep rbd|cut -d'\' -f2`; do md5sum rbd\\$i >> /root/osd7_4.50_md5; done
+for i in `rbd -p images ls | grep _disk`; do echo $i; rbd -p images info $i |grep 4ed1774b0dc51; done
+
 "filestore_xfs_extsize": "false"
+
+xxd // show file content in binary
+
+# ssh tunnel
+ssh -i /Users/mabo/.ssh/heat_key -D 8080 -C -N root@158.85.124.50
+# set "PermitTunnel yes" on both server and client side
+# client:
+ssh -i /home/mabo/.ssh/heat_key -f -o Tunnel=ethernet -T -N -w 2000:2000 root@158.85.124.50
+ip link set tap2000 up
+ip addr add 10.100.100.10/24 dev tap2000
+ip route del default
+ip route add default via 10.100.100.1 dev tap2000
+
+# server:
+iptables -t nat -A POSTROUTING -s 10.100.100.0/24 -j SNAT --to-source 158.85.124.50
+ip link set tap2000 up
+ip addr add 10.100.100.1/24 dev tap2000
+
+
+
+
+
+
+
+
+
+
+
+
+
+
